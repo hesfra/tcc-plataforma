@@ -1,0 +1,14 @@
+http://localhost {
+
+    handle_path /clients/* {
+        reverse_proxy clients:80
+    }
+
+    handle_path /products/* {
+        reverse_proxy products:80
+    }
+
+    handle_path /sales/* {
+        reverse_proxy sales:80
+    }
+}

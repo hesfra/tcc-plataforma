@@ -1,0 +1,100 @@
+version: '3.9'
+
+services:
+  caddy:
+    image: caddy:2
+    container_name: caddy
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - clients
+      - products
+      - sales
+
+  clients:
+    build: ./Clients
+    container_name: clients
+    ports:
+      - "5001:80" 
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://0.0.0.0:80
+      - ConnectionStrings__Default=Host=clients-db;Database=clientsdb;Username=postgres;Password=postgres
+    depends_on:
+      - clients-db
+
+  # currencies:
+  #   build: ./Currencies
+  #   container_name: currencies
+  #   environment:
+  #     - ASPNETCORE_ENVIRONMENT=Development
+  #     - ASPNETCORE_URLS=http://0.0.0.0:80
+
+  products:
+    build: ./Products
+    container_name: products
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://0.0.0.0:80
+      - ConnectionStrings__Default=Host=products-db;Database=productsdb;Username=postgres;Password=postgres
+    depends_on:
+      - products-db
+
+  sales:
+    build: ./Sales
+    container_name: sales
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://0.0.0.0:80
+      - ConnectionStrings__Default=Host=sales-db;Database=salesdb;Username=postgres;Password=postgres
+    depends_on:
+      - sales-db
+
+  clients-db:
+    image: postgres:15
+    container_name: clients-db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: clientsdb
+    ports:
+      - "5433:5432"
+    volumes:
+      - ./Clients/src/Infrastructure/Configs/Postgres/Postgres_init:/docker-entrypoint-initdb.d
+      - clients_data:/var/lib/postgresql/data
+
+  products-db:
+    image: postgres:15
+    container_name: products-db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: productsdb
+    ports:
+      - "5434:5432"
+    volumes:
+      - products_data:/var/lib/postgresql/data
+
+  sales-db:
+    image: postgres:15
+    container_name: sales-db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: salesdb
+    ports:
+      - "5435:5432"
+    volumes:
+      - sales_data:/var/lib/postgresql/data
+
+volumes:
+  clients_data:
+  products_data:
+  sales_data:
+  caddy_data:
+  caddy_config:
