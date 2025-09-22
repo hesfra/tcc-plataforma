@@ -1,27 +1,27 @@
 using Application.UseCases.Products;
 using Domain.Repositories;
 using Infrastructure.Repositories.Products;
+using Infrastructure.Configs.DBconfigs;
+using Npgsql;
 
 var builder = WebApplication.CreateBuilder(args);
 var services = builder.Services;
 
-// =====================
-// Repositório em memória
-// =====================
-services.AddSingleton<IProductRepository, InMemoryProductRepository>();
 
-// =====================
-// Handlers Products
-// =====================
-services.AddSingleton<CreateProductHandler>();
-services.AddSingleton<GetProductByIdHandler>();
-services.AddSingleton<GetAllProductsHandler>();
-services.AddSingleton<UpdateProductHandler>();
-services.AddSingleton<DeleteProductHandler>();
+var connectionString = Environment.GetEnvironmentVariable("ConnectionStrings__Default");
 
-// =====================
-// Serviços do ASP.NET
-// =====================
+services.AddSingleton<NpgsqlConnection>(provider =>
+{
+    return DBconfigs.CreateConnection(connectionString);
+});
+
+services.AddScoped<IProductRepository, PostgresProductRepository>();
+services.AddScoped<CreateProductHandler>();
+services.AddScoped<GetProductByIdHandler>();
+services.AddScoped<GetAllProductsHandler>();
+services.AddScoped<UpdateProductHandler>();
+services.AddScoped<DeleteProductHandler>();
+
 services.AddControllers();
 services.AddEndpointsApiExplorer();
 services.AddSwaggerGen(c =>
@@ -35,14 +35,12 @@ services.AddSwaggerGen(c =>
 
 var app = builder.Build();
 
-// =====================
-// Middleware
-// =====================
+
 app.UseSwagger();
 app.UseSwaggerUI(c =>
 {
     c.SwaggerEndpoint("/swagger/v1/swagger.json", "Client API V1");
-    c.RoutePrefix = "swagger"; // Serve em /clients/swagger, /products/swagger etc
+    c.RoutePrefix = "swagger";
 });
 
 app.MapControllers();
